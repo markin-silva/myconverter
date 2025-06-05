@@ -3,3 +3,10 @@ uvicorn
 yt-dlp
 PyJWT[crypto]
 requests
+sqlalchemy
+asyncpg
+databases
+pydantic
+pydantic-settings
+python-multipart
+psycopg2-binary

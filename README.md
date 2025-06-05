@@ -12,6 +12,8 @@
 - [Keycloak](https://www.keycloak.org/) (para autenticação)
 - [Vue.js 3](https://vuejs.org/) (para frontend)
 - [axios](https://axios-http.com/) (requisições HTTP no front)
+- [PostgreSQL](https://www.postgresql.org/) (banco de dados relacional)
+- [SQLAlchemy](https://www.sqlalchemy.org/) (ORM para interação com banco de dados)
 
 ---
 
@@ -20,8 +22,6 @@
 ### Pré-requisitos
 - Docker
 - Docker Compose
-- Python 3.10+
-- FFmpeg (para conversão de áudio e vídeo)
 
 ---
 
@@ -47,11 +47,36 @@ docker compose up --build
 ```
 myconverter/
 ├── backend/        # Código FastAPI + yt-dlp
+│   ├── app/        # Código principal da aplicação
+│   ├── downloads/  # Pasta onde ficam os arquivos baixados
 ├── frontend/       # Código Vue.js + Keycloak-js
 ├── keycloak/       # Realm export JSON para configuração automática
 ├── docker-compose.yml
 ├── README.md
 ```
+
+---
+
+## 🐘 Banco de Dados PostgreSQL
+
+A aplicação já sobe um container com banco de dados PostgreSQL.
+
+- **Database**: `mydb`
+- **Usuário**: `postgres`
+- **Senha**: `postgres`
+- **Host**: `localhost`
+- **Porta**: `5432`
+
+O banco é utilizado para persistir o histórico de downloads, armazenando informações como:
+- Usuário que iniciou o download
+- URL do vídeo
+- Formato solicitado (`mp3`, `mp4`, etc)
+- Caminho do arquivo gerado
+- Status (`pending`, `completed`, `failed`)
+
+O modelo de download é gerenciado utilizando o [SQLAlchemy](https://www.sqlalchemy.org/).
+
+**Importante**: As tabelas são criadas automaticamente na inicialização da aplicação.
 
 ---
 
