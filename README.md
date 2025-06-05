@@ -1,6 +1,6 @@
-# 🎬 FastAPI YouTube Downloader
+# 🎬 FastAPI + Vue.js YouTube Downloader
 
-[Uma API simples para baixar vídeos ou áudios do YouTube via link!](https://github.com/markin-silva/myconverter)
+[Uma aplicação completa para baixar vídeos ou áudios do YouTube via link com autenticação Keycloak!](https://github.com/markin-silva/myconverter)
 
 ---
 
@@ -8,8 +8,10 @@
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 - [Uvicorn](https://www.uvicorn.org/)
-- [FFmpeg](https://ffmpeg.org/) (para conversão de áudio)
+- [FFmpeg](https://ffmpeg.org/) (para conversão de áudio e vídeo)
 - [Keycloak](https://www.keycloak.org/) (para autenticação)
+- [Vue.js 3](https://vuejs.org/) (para frontend)
+- [axios](https://axios-http.com/) (requisições HTTP no front)
 
 ---
 
@@ -19,7 +21,7 @@
 - Docker
 - Docker Compose
 - Python 3.10+
-- FFmpeg (para conversão de áudio)
+- FFmpeg (para conversão de áudio e vídeo)
 
 ---
 
@@ -40,34 +42,57 @@ docker compose up --build
 
 ---
 
+## 📦 Estrutura do projeto
+
+```
+myconverter/
+├── backend/        # Código FastAPI + yt-dlp
+├── frontend/       # Código Vue.js + Keycloak-js
+├── keycloak/       # Realm export JSON para configuração automática
+├── docker-compose.yml
+├── README.md
+```
+
+---
+
 ## 🔐 Autenticação Keycloak
 
 O ambiente já sobe com:
 
 - Realm: `myrealm`
-- Client: `fastapi-client`
+- Client: `myconverter`
 - Usuário: `user`
 - Senha: `password`
 
-Não é necessário nenhuma configuração manual! Tudo é importado automaticamente.
+Não é necessário nenhuma configuração manual! Tudo é importado automaticamente via `realm-export.json`.
 
 ---
 
 ## 📥 Como usar
 
-### 1. Autenticação
+### 1. Frontend
 
-- Faça login no Keycloak no Client `fastapi-client`.
-- Pegue o **Access Token** (JWT) após o login.
-- Nos requests da API, envie o token no cabeçalho:
+- Acesse o Frontend no navegador:
 
-```http
-Authorization: Bearer <seu_access_token>
 ```
+http://localhost:3000
+```
+
+- Faça login com:
+  - **Usuário**: `user`
+  - **Senha**: `password`
+
+- Após login:
+  - Insira a URL do vídeo do YouTube.
+  - Escolha o formato (`mp3` ou `mp4`).
+  - Clique em **Baixar**.
+  - O download será iniciado automaticamente.
+
+**Importante**: Todas as requisições enviam o `Bearer Token` obtido via Keycloak.
 
 ---
 
-### 2. Endpoints disponíveis
+### 2. Endpoints disponíveis (Backend)
 
 #### `POST /download`
 
@@ -106,7 +131,7 @@ Authorization: Bearer <token>
 
 #### `GET /files/{file_name}`
 
-Baixa o arquivo que foi gerado.
+Baixa o arquivo gerado.
 
 **Requer Bearer Token no Header**:
 
@@ -117,7 +142,8 @@ Authorization: Bearer <token>
 ---
 
 ## 📝 Observações
-- Todos os arquivos baixados ficam salvos na pasta `downloads/`.
-- A conversão para `.mp3` exige que o `ffmpeg` esteja disponível — já incluímos isso na imagem Docker.
-- Esta API é para fins educacionais. Respeite os [Termos de Serviço do YouTube](https://www.youtube.com/t/terms).
+- Todos os arquivos baixados ficam salvos na pasta `downloads/` do container backend.
+- A conversão para `.mp3` e `.mp4` exige o `ffmpeg` — já incluímos isso na imagem Docker.
+- Esta aplicação é para fins educacionais. Respeite os [Termos de Serviço do YouTube](https://www.youtube.com/t/terms).
 - Os downloads e tokens são válidos apenas em ambiente de desenvolvimento.
+- O frontend Vue.js integra automaticamente com o Keycloak para login e consumo dos endpoints protegidos.

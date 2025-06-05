@@ -1,6 +1,0 @@
-fastapi
-uvicorn
-yt-dlp
-python-multipart
-python-jose
-python-keycloak

@@ -1,21 +1,23 @@
 import os
 import time
 import requests
+import uuid
+import yt_dlp
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2AuthorizationCodeBearer
-from jose import jwt
-from pydantic import BaseModel
-import yt_dlp
-import uuid
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
+import jwt
+from jwt import PyJWKClient
 
 # Diretório onde os downloads serão salvos
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 # Configuração de Keycloak
-KEYCLOAK_URL = "http://keycloak:8080/realms/myrealm"
+KEYCLOAK_URL = "http://localhost:8080/realms/myrealm"
 OPENID_CONFIG_URL = f"{KEYCLOAK_URL}/.well-known/openid-configuration"
 
 def wait_for_keycloak():
@@ -35,11 +37,25 @@ wait_for_keycloak()
 
 # Pega as configurações do OpenID depois que o Keycloak está pronto
 OPENID = requests.get(OPENID_CONFIG_URL).json()
-PUBLIC_KEY = requests.get(OPENID["jwks_uri"]).json()["keys"][0]
+
 ALGORITHMS = ["RS256"]
 
 app = FastAPI()
 
+# Configurar CORS
+origins = [
+    "http://localhost:3000",  # Frontend Vue.js
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Definições de formato
 AUDIO_FORMATS = ['mp3', 'm4a', 'aac', 'wav', 'opus']
 VIDEO_FORMATS = ['mp4', 'webm', 'mkv']
 
@@ -49,19 +65,24 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
     tokenUrl=f"{KEYCLOAK_URL}/protocol/openid-connect/token"
 )
 
+# Inicializa o PyJWKClient
+jwks_client = PyJWKClient(OPENID["jwks_uri"])
+
 # Função para verificar o token JWT
 def verify_token(token: str = Depends(oauth2_scheme)):
     try:
+        signing_key = jwks_client.get_signing_key_from_jwt(token).key
+
         payload = jwt.decode(
             token,
-            jwt.algorithms.RSAAlgorithm.from_jwk(PUBLIC_KEY),
+            signing_key,
             algorithms=ALGORITHMS,
-            audience="account",  # ou ajuste para o client_id correto se necessário
+            audience="myconverter",
             issuer=f"{KEYCLOAK_URL}"
         )
         return payload
-    except jwt.JWTError:
-        raise HTTPException(status_code=401, detail="Token inválido")
+    except jwt.PyJWTError as e:
+        raise HTTPException(status_code=401, detail=f"Token inválido: {str(e)}")
 
 # Modelo para o corpo da requisição
 class DownloadRequest(BaseModel):
@@ -81,8 +102,6 @@ async def download_media(request: DownloadRequest, token: dict = Depends(verify_
 
     random_id = str(uuid.uuid4())
     output_template = os.path.join(DOWNLOAD_DIR, f"{random_id}.%(ext)s")
-
-    ydl_opts = {}
 
     if format_requested in AUDIO_FORMATS:
         ydl_opts = {
