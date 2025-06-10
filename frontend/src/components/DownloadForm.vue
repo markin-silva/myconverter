@@ -18,7 +18,7 @@
     </form>
 
     <div v-if="successMessage" class="download-section">
-      <h2>✅ {{ successMessage }}</h2>
+      <h2>{{ successMessage }}</h2>
     </div>
 
     <div v-if="error" class="error">
@@ -31,6 +31,7 @@
 import axios from 'axios';
 
 export default {
+  name: 'DownloadForm',
   data() {
     return {
       url: '',
@@ -48,7 +49,7 @@ export default {
       try {
         const token = this.$keycloak.token;
 
-        // Primeiro: solicita conversão
+        // 1. Enfileira o pedido de download
         const response = await axios.post(
           'http://localhost:8000/download',
           { url: this.url, format: this.format },
@@ -59,30 +60,15 @@ export default {
           }
         );
 
-        const fileUrl = `http://localhost:8000${response.data.download_link}`;
-        const fileName = response.data.file_name;
+        const fileId = response.data.file_id;
 
-        // Segundo: faz o download do arquivo
-        const fileResponse = await axios.get(fileUrl, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Manda o token no download
-          },
-          responseType: 'blob', // Importante para baixar como arquivo
-        });
+        // 2. Mostra mensagem de sucesso
+        this.successMessage = `✅ Seu download foi enfileirado com sucesso! ID: ${fileId}`;
 
-        // Cria um link para download e aciona o clique
-        const downloadUrl = window.URL.createObjectURL(new Blob([fileResponse.data]));
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.setAttribute('download', fileName); // Nome correto do arquivo
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-
-        this.successMessage = 'Seu download foi iniciado com sucesso!';
+        // (futuramente: salvar o file_id para acompanhar o status ou baixar)
       } catch (err) {
         console.error(err);
-        this.error = 'Erro ao tentar baixar o vídeo. Verifique a URL ou tente novamente.';
+        this.error = 'Erro ao tentar iniciar o download. Verifique a URL ou tente novamente.';
       } finally {
         this.loading = false;
       }

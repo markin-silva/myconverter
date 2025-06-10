@@ -14,6 +14,8 @@
 - [axios](https://axios-http.com/) (requisições HTTP no front)
 - [PostgreSQL](https://www.postgresql.org/) (banco de dados relacional)
 - [SQLAlchemy](https://www.sqlalchemy.org/) (ORM para interação com banco de dados)
+- [RabbitMQ](https://www.rabbitmq.com/) (para mensageria)
+- [aio-pika](https://aio-pika.readthedocs.io/) (cliente assíncrono para RabbitMQ)
 
 ---
 
@@ -40,6 +42,15 @@ cd myconverter
 docker compose up --build
 ```
 
+3. **Inicie manualmente o worker de conversão (dentro do container backend):**
+
+```bash
+docker exec -it fastapi-backend bash
+python app/messaging/rabbitmq_consumer.py
+```
+
+O worker ficará escutando a fila do RabbitMQ e processará as conversões de forma assíncrona.
+
 ---
 
 ## 📦 Estrutura do projeto
@@ -48,6 +59,7 @@ docker compose up --build
 myconverter/
 ├── backend/        # Código FastAPI + yt-dlp
 │   ├── app/        # Código principal da aplicação
+│   │   ├── messaging/    # Publisher e consumer do RabbitMQ
 │   ├── downloads/  # Pasta onde ficam os arquivos baixados
 ├── frontend/       # Código Vue.js + Keycloak-js
 ├── keycloak/       # Realm export JSON para configuração automática
@@ -111,7 +123,8 @@ http://localhost:3000
   - Insira a URL do vídeo do YouTube.
   - Escolha o formato (`mp3` ou `mp4`).
   - Clique em **Baixar**.
-  - O download será iniciado automaticamente.
+  - A solicitação será enfileirada para processamento assíncrono.
+  - Você verá uma mensagem de sucesso com o ID do download.
 
 **Importante**: Todas as requisições enviam o `Bearer Token` obtido via Keycloak.
 
@@ -146,9 +159,9 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "message": "Download concluído com sucesso.",
-  "file_name": "arquivo-gerado.mp3",
-  "download_link": "/files/arquivo-gerado.mp3"
+  "message": "Download enfileirado com sucesso.",
+  "file_id": "id-gerado",
+  "status": "pending"
 }
 ```
 
