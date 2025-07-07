@@ -1,7 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-import os
-import uuid
-
 from app.schemas import DownloadRequest
 from app.crud import create_download
 from app.auth import verify_token
@@ -22,17 +19,14 @@ async def download_media(request: DownloadRequest, token: dict = Depends(verify_
             detail=f"Formato inválido. Escolha entre: {AUDIO_FORMATS + VIDEO_FORMATS}"
         )
 
-    random_id = str(uuid.uuid4())
-
-    await create_download(
+    download_id = await create_download(
         user_id=token.get("sub"),
         video_url=request.url,
         format=format_requested,
-        file_path=random_id
     )
 
     message = {
-        "id": random_id,
+        "id": download_id,
         "url": request.url,
         "format": format_requested,
         "user_id": token.get("sub")
@@ -45,6 +39,6 @@ async def download_media(request: DownloadRequest, token: dict = Depends(verify_
     
     return {
         "message": "Download enfileirado com sucesso.",
-        "file_id": random_id,
+        "file_id": download_id,
         "status": "pending"
     }

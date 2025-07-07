@@ -17,4 +17,5 @@ class Download(Base):
     video_url = Column(String, nullable=False)
     format = Column(String, nullable=False)
     status = Column(Enum(DownloadStatus), default=DownloadStatus.pending)
-    file_path = Column(String)
+    s3_key = Column(String, nullable=True)
+

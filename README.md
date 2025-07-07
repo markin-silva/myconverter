@@ -16,6 +16,7 @@
 - [SQLAlchemy](https://www.sqlalchemy.org/) (ORM para interação com banco de dados)
 - [RabbitMQ](https://www.rabbitmq.com/) (para mensageria)
 - [aio-pika](https://aio-pika.readthedocs.io/) (cliente assíncrono para RabbitMQ)
+- [MinIO](https://min.io/) (para armazenamento de arquivos S3 local)
 
 ---
 
@@ -83,8 +84,8 @@ O banco é utilizado para persistir o histórico de downloads, armazenando infor
 - Usuário que iniciou o download
 - URL do vídeo
 - Formato solicitado (`mp3`, `mp4`, etc)
-- Caminho do arquivo gerado
 - Status (`pending`, `completed`, `failed`)
+- (`s3_key`): Chave do objeto no MinIO
 
 O modelo de download é gerenciado utilizando o [SQLAlchemy](https://www.sqlalchemy.org/).
 
@@ -180,7 +181,7 @@ Authorization: Bearer <token>
 ---
 
 ## 📝 Observações
-- Todos os arquivos baixados ficam salvos na pasta `downloads/` do container backend.
+- Todos os arquivos baixados ficam salvos no MinIO, acessível via localhost:9001
 - A conversão para `.mp3` e `.mp4` exige o `ffmpeg` — já incluímos isso na imagem Docker.
 - Esta aplicação é para fins educacionais. Respeite os [Termos de Serviço do YouTube](https://www.youtube.com/t/terms).
 - Os downloads e tokens são válidos apenas em ambiente de desenvolvimento.
